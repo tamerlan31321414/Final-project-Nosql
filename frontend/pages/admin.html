@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Admin</title>
+  <link rel="stylesheet" href="../assets/app.css" />
+</head>
+<body>
+  <div id="nav"></div>
+  <div class="container">
+    <h2>Admin</h2>
+    <div id="err" class="err"></div>
+
+    <div class="card" style="max-width:700px">
+      <div style="font-weight:700;margin-bottom:8px">Create quiz</div>
+      <div class="row">
+        <input id="title" placeholder="Title" style="flex:1" />
+        <input id="category" placeholder="Category" value="General" />
+      </div>
+      <div class="row">
+        <input id="desc" placeholder="Description" style="flex:1" />
+        <button id="create">Create</button>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:700px">
+      <div style="font-weight:700;margin-bottom:8px">My quizzes</div>
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <script src="../assets/app.js"></script>
+  <script>
+    mountNav();
+    requireAuth("admin");
+
+    async function loadMine() {
+      document.getElementById("err").textContent = "";
+      try {
+        const data = await request("/quizzes/mine?page=1&limit=50", "GET");
+        const el = document.getElementById("list");
+        el.innerHTML = "";
+        data.items.forEach((q) => {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `
+            <div style="font-weight:700">${q.title}</div>
+            <div style="opacity:.8">Published: ${String(q.isPublished)} | Attempts: ${q.attemptCount}</div>
+            <div class="row" style="margin-top:8px">
+              <a href="./analytics.html?id=${q._id}">Analytics</a>
+              <a href="./quiz.html?id=${q._id}">Open</a>
+              <button data-del="${q._id}">Delete</button>
+              <button data-pub="${q._id}">${q.isPublished ? "Unpublish" : "Publish"}</button>
+            </div>
+          `;
+          el.appendChild(div);
+        });
+
+        document.querySelectorAll("button[data-del]").forEach((b) => {
+          b.onclick = async () => {
+            try {
+              await request(`/quizzes/${b.getAttribute("data-del")}`, "DELETE");
+              loadMine();
+            } catch (e) {
+              document.getElementById("err").textContent = e.message;
+            }
+          };
+        });
+
+        document.querySelectorAll("button[data-pub]").forEach((b) => {
+          b.onclick = async () => {
+            try {
+              const id = b.getAttribute("data-pub");
+              const quiz = await request(`/quizzes/${id}`, "GET");
+              await request(`/quizzes/${id}/publish`, "PATCH", { isPublished: !quiz.isPublished });
+              loadMine();
+            } catch (e) {
+              document.getElementById("err").textContent = e.message;
+            }
+          };
+        });
+      } catch (e) {
+        document.getElementById("err").textContent = e.message;
+      }
+    }
+
+    document.getElementById("create").onclick = async () => {
+      document.getElementById("err").textContent = "";
+      try {
+        const body = {
+          title: document.getElementById("title").value,
+          description: document.getElementById("desc").value,
+          category: document.getElementById("category").value
+        };
+        await request("/quizzes", "POST", body);
+        document.getElementById("title").value = "";
+        document.getElementById("desc").value = "";
+        loadMine();
+      } catch (e) {
+        document.getElementById("err").textContent = e.message;
+      }
+    };
+
+    loadMine();
+  </script>
+</body>
+</html>

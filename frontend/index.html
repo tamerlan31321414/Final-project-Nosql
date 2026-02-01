@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Online Quiz System</title>
+  <link rel="stylesheet" href="assets/app.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #222;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+    main {
+      padding: 40px;
+      max-width: 800px;
+      margin: auto;
+    }
+    .menu {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    a {
+      display: block;
+      padding: 15px;
+      background: #fff;
+      text-align: center;
+      text-decoration: none;
+      color: #222;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+    a:hover {
+      background: #222;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Online Quiz System</h1>
+  <p>Main navigation page</p>
+</header>
+
+<main>
+  <div class="menu">
+    <a href="pages/login.html">Login</a>
+    <a href="pages/register.html">Register</a>
+    <a href="pages/quizzes.html">Quizzes</a>
+    <a href="pages/take.html">Take Quiz</a>
+    <a href="pages/attempts.html">My Attempts</a>
+    <a href="pages/analytics.html">Analytics</a>
+    <a href="pages/admin.html">Admin Panel</a>
+  </div>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Register</title>
+  <link rel="stylesheet" href="../assets/app.css" />
+</head>
+<body>
+  <div id="nav"></div>
+  <div class="container">
+    <h2>Register</h2>
+    <div id="err" class="err"></div>
+    <div class="card" style="max-width:420px">
+      <div class="row"><input id="name" placeholder="Name" style="flex:1"></div>
+      <div class="row"><input id="email" placeholder="Email" style="flex:1"></div>
+      <div class="row"><input id="password" placeholder="Password" type="password" style="flex:1"></div>
+      <div class="row">
+        <select id="role">
+          <option value="student">student</option>
+          <option value="admin">admin</option>
+        </select>
+        <button id="btn">Create account</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/app.js"></script>
+  <script>
+    mountNav();
+    document.getElementById("btn").onclick = async () => {
+      document.getElementById("err").textContent = "";
+      try {
+        const body = {
+          name: document.getElementById("name").value,
+          email: document.getElementById("email").value,
+          password: document.getElementById("password").value,
+          role: document.getElementById("role").value
+        };
+        const data = await request("/auth/register", "POST", body);
+        setAuth(data.token, data.user);
+        location.href = "./quizzes.html";
+      } catch (e) {
+        document.getElementById("err").textContent = e.message;
+      }
+    };
+  </script>
+</body>
+</html>

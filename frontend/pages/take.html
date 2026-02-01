@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Take Quiz</title>
+  <link rel="stylesheet" href="../assets/app.css" />
+</head>
+<body>
+  <div id="nav"></div>
+  <div class="container">
+    <div id="err" class="err"></div>
+    <h2 id="title"></h2>
+    <div id="questions"></div>
+    <button id="submit">Submit</button>
+  </div>
+
+  <script src="../assets/app.js"></script>
+  <script>
+    mountNav();
+    requireAuth();
+
+    const id = qs("id");
+    const startedAt = new Date().toISOString();
+    let quiz = null;
+    const answers = {};
+
+    function toggle(qid, oid, multi) {
+      const key = String(qid);
+      const s = String(oid);
+      if (!answers[key]) answers[key] = [];
+      const set = new Set(answers[key].map(String));
+      if (!multi) {
+        answers[key] = [s];
+        return;
+      }
+      if (set.has(s)) set.delete(s); else set.add(s);
+      answers[key] = Array.from(set);
+    }
+
+    async function load() {
+      document.getElementById("err").textContent = "";
+      try {
+        quiz = await request(`/quizzes/${id}`, "GET");
+        document.getElementById("title").textContent = `Take: ${quiz.title}`;
+        const qEl = document.getElementById("questions");
+        qEl.innerHTML = "";
+        quiz.questions.forEach((q, idx) => {
+          const div = document.createElement("div");
+          div.className = "card";
+          const multi = q.type === "multi";
+          let html = `<div style="font-weight:700">${idx + 1}. ${q.text}</div>`;
+          html += `<div style="margin-top:8px;display:grid;gap:6px">`;
+          q.options.forEach((o) => {
+            const inputType = multi ? "checkbox" : "radio";
+            html += `
+              <label style="display:flex;gap:8px;align-items:center">
+                <input type="${inputType}" name="${q._id}" data-qid="${q._id}" data-oid="${o._id}" data-multi="${multi ? "1":"0"}"/>
+                <span>${o.text}</span>
+              </label>
+            `;
+          });
+          html += `</div>`;
+          div.innerHTML = html;
+          qEl.appendChild(div);
+        });
+
+        document.querySelectorAll("input[data-qid]").forEach((inp) => {
+          inp.addEventListener("change", (e) => {
+            const qid = e.target.getAttribute("data-qid");
+            const oid = e.target.getAttribute("data-oid");
+            const multi = e.target.getAttribute("data-multi") === "1";
+            toggle(qid, oid, multi);
+            if (!multi) {
+              document.querySelectorAll(`input[name="${qid}"]`).forEach((x) => { if (x !== e.target) x.checked = false; });
+            }
+          });
+        });
+      } catch (e) {
+        document.getElementById("err").textContent = e.message;
+      }
+    }
+
+    document.getElementById("submit").onclick = async () => {
+      document.getElementById("err").textContent = "";
+      try {
+        const payload = {
+          startedAt,
+          submittedAt: new Date().toISOString(),
+          answers: Object.entries(answers).map(([questionId, selectedOptionIds]) => ({ questionId, selectedOptionIds }))
+        };
+        await request(`/quizzes/${id}/attempts`, "POST", payload);
+        location.href = "./attempts.html";
+      } catch (e) {
+        document.getElementById("err").textContent = e.message;
+      }
+    };
+
+    load();
+  </script>
+</body>
+</html>

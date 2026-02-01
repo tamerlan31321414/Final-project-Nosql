@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Quizzes</title>
+  <link rel="stylesheet" href="../assets/app.css" />
+</head>
+<body>
+  <div id="nav"></div>
+
+  <div class="container">
+    <h2>Published Quizzes</h2>
+    <div id="err" class="err" style="display:none"></div>
+
+    <div class="card">
+      <div class="row">
+        <div class="grow">
+          <div class="muted" style="font-weight:700;margin-bottom:6px">Search</div>
+          <input id="search" placeholder="Title keywords..." />
+        </div>
+        <div class="grow">
+          <div class="muted" style="font-weight:700;margin-bottom:6px">Category</div>
+          <input id="category" placeholder="General, Programming..." />
+        </div>
+        <div>
+          <div class="muted" style="font-weight:700;margin-bottom:6px">&nbsp;</div>
+          <button id="apply">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="list" class="grid"></div>
+
+    <div class="pagination">
+      <button id="prev" class="ghost">Prev</button>
+      <span id="page" class="pill muted" style="font-weight:700"></span>
+      <button id="next" class="ghost">Next</button>
+    </div>
+  </div>
+
+  <script src="../assets/app.js"></script>
+  <script>
+    mountNav();
+
+    let page = 1;
+    const limit = 9;
+    let total = 0;
+
+    function showErr(msg) {
+      const e = document.getElementById("err");
+      if (!msg) { e.style.display = "none"; e.textContent = ""; return; }
+      e.style.display = "block";
+      e.textContent = msg;
+    }
+
+    async function load() {
+      showErr("");
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("limit", String(limit));
+
+      const s = document.getElementById("search").value.trim();
+      const c = document.getElementById("category").value.trim();
+      if (s) params.set("search", s);
+      if (c) params.set("category", c);
+
+      const list = document.getElementById("list");
+      list.innerHTML = `<div class="card">Loading...</div>`;
+
+      try {
+        const data = await request(`/quizzes?${params.toString()}`, "GET");
+        total = data.total || 0;
+        document.getElementById("page").textContent = `Page ${data.page || page}`;
+
+        list.innerHTML = "";
+        (data.items || []).forEach((q) => {
+          const el = document.createElement("div");
+          el.className = "item";
+          el.innerHTML = `
+            <div class="title">${q.title || "Untitled"}</div>
+            <div class="muted">${q.description || ""}</div>
+            <div class="meta">
+              <span class="badge">${q.category || "General"}</span>
+              <span class="badge">Attempts: ${q.attemptCount || 0}</span>
+            </div>
+            <div class="actions">
+              <a href="./quiz.html?id=${q._id}">Open</a>
+              <span class="muted" style="font-size:12px">ID: ${String(q._id).slice(-6)}</span>
+            </div>
+          `;
+          list.appendChild(el);
+        });
+
+        if ((data.items || []).length === 0) {
+          list.innerHTML = `<div class="card">No quizzes found.</div>`;
+        }
+      } catch (e) {
+        list.innerHTML = "";
+        showErr(e.message);
+      }
+    }
+
+    document.getElementById("apply").onclick = () => { page = 1; load(); };
+    document.getElementById("prev").onclick = () => { if (page > 1) { page--; load(); } };
+    document.getElementById("next").onclick = () => { if (page * limit < total) { page++; load(); } };
+
+    load();
+  </script>
+</body>
+</html>
